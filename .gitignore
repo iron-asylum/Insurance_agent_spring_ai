@@ -1,0 +1,18 @@
+# Build output
+target/
+
+# Local H2 database (recreated + reseeded automatically on first run)
+data/
+
+# IDE / OS
+.vscode/
+.idea/
+*.iml
+.DS_Store
+
+# Logs
+*.log
+nohup.out
+
+# Claude Code local settings
+.claude/settings.local.json

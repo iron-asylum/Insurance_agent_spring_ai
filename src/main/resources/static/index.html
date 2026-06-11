@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Insurance Claims Agent</title>
+  <style>
+    :root {
+      --sidebar: #0f172a; --sidebar-2: #1e293b; --panel: #ffffff;
+      --bg: #f1f5f9; --muted: #64748b; --line: #e2e8f0; --ink: #0f172a;
+      --brand: #4f46e5; --brand-soft: #eef2ff; --ok: #22c55e;
+      --amber: #f59e0b; --blue: #3b82f6; --green: #22c55e; --violet: #8b5cf6; --red: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--ink); display: flex; height: 100vh; overflow: hidden;
+    }
+
+    /* ---------- Sidebar ---------- */
+    aside {
+      width: 232px; flex: 0 0 232px; background: var(--sidebar); color: #cbd5e1;
+      display: flex; flex-direction: column; padding: 18px 12px;
+    }
+    .logo-row { display: flex; align-items: center; gap: 10px; padding: 2px 8px 18px; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px;
+      background: linear-gradient(135deg, #6366f1, #22d3ee);
+      display: grid; place-items: center; font-size: 19px;
+    }
+    .logo-row h1 { font-size: 14.5px; margin: 0; color: #fff; font-weight: 650; line-height: 1.25; }
+    .logo-row .sub { font-size: 10.5px; opacity: .55; }
+    nav { display: flex; flex-direction: column; gap: 3px; }
+    nav a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 9px;
+      color: #94a3b8; text-decoration: none; font-size: 13.5px; font-weight: 500; transition: .15s;
+    }
+    nav a:hover { background: var(--sidebar-2); color: #e2e8f0; }
+    nav a.active { background: var(--brand); color: #fff; }
+    nav a .ico { width: 20px; text-align: center; font-size: 15px; }
+    .side-foot { margin-top: auto; padding: 10px 12px; font-size: 11.5px; color: #64748b; }
+    .side-foot .counts { margin-bottom: 8px; line-height: 1.7; }
+    .side-foot .counts b { color: #cbd5e1; font-weight: 600; }
+    .statusline { display: flex; align-items: center; gap: 7px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)} 70%{box-shadow:0 0 0 7px rgba(34,197,94,0)} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0)} }
+
+    /* ---------- Main / views ---------- */
+    main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .view { display: none; flex: 1; min-height: 0; flex-direction: column; overflow-y: auto; padding: 22px 26px; }
+    .view.active { display: flex; }
+    .view-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex: 0 0 auto; }
+    .view-head h2 { font-size: 19px; margin: 0; font-weight: 650; }
+    .view-head .desc { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+    .spacer { flex: 1; }
+    .btn {
+      border: 1px solid var(--line); background: #fff; color: #334155; border-radius: 9px;
+      padding: 8px 14px; font-size: 12.5px; cursor: pointer; transition: .15s; font-weight: 500;
+    }
+    .btn:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+
+    /* ---------- Dashboard ---------- */
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
+    .stat { padding: 16px 18px; }
+    .stat .label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .stat .value { font-size: 25px; font-weight: 700; margin-top: 5px; letter-spacing: -.3px; }
+    .stat .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+    .chart-grid { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .chart { padding: 16px 18px; min-height: 220px; }
+    .chart h3 { margin: 0 0 12px; font-size: 13px; font-weight: 600; color: #334155; }
+    .donut-wrap { display: flex; align-items: center; gap: 16px; }
+    .legend { font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .legend .li { display: flex; align-items: center; gap: 7px; color: #475569; }
+    .legend .sw { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 10px; }
+    .legend b { margin-left: auto; font-weight: 600; }
+    .bars { display: flex; align-items: flex-end; gap: 6px; height: 150px; padding-top: 8px; }
+    .bars .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 5px; }
+    .bars .fill { background: linear-gradient(180deg, #818cf8, var(--brand)); border-radius: 5px 5px 2px 2px;
+      min-height: 2px; transition: .3s; }
+    .bars .lbl { font-size: 9.5px; color: var(--muted); text-align: center; white-space: nowrap; }
+    .hbars { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+    .hbar .top { display: flex; justify-content: space-between; font-size: 11.5px; color: #475569; margin-bottom: 4px; }
+    .hbar .track { height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+    .hbar .fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #22d3ee, var(--brand)); }
+
+    /* ---------- Tables ---------- */
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .search { display: flex; align-items: center; background: #fff; border: 1px solid var(--line);
+      border-radius: 10px; padding: 0 12px; width: 280px; }
+    .search input { border: none; outline: none; padding: 9px 8px; font-size: 13px; flex: 1; background: transparent; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chips button { background: #fff; border: 1px solid var(--line); color: #475569; padding: 6px 12px;
+      border-radius: 999px; font-size: 12px; cursor: pointer; transition: .15s; }
+    .chips button:hover { border-color: var(--brand); color: var(--brand); }
+    .chips button.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .tablecard { overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+      color: var(--muted); font-weight: 600; padding: 11px 14px; border-bottom: 1px solid var(--line);
+      background: #f8fafc; }
+    tbody td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    tbody tr { cursor: pointer; transition: background .1s; }
+    tbody tr:hover { background: var(--brand-soft); }
+    tbody tr:last-child td { border-bottom: none; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .trunc { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .empty { padding: 28px; text-align: center; color: var(--muted); font-size: 13px; }
+
+    /* ---------- Modal ---------- */
+    .overlay { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: none;
+      align-items: center; justify-content: center; z-index: 50; padding: 24px; }
+    .overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 16px; width: 640px; max-width: 100%; max-height: 86vh;
+      overflow-y: auto; box-shadow: 0 20px 50px rgba(15,23,42,.3); }
+    .modal-head { display: flex; align-items: center; gap: 10px; padding: 18px 22px 0; }
+    .modal-head h3 { margin: 0; font-size: 16px; font-weight: 650; }
+    .modal-head .x { margin-left: auto; border: none; background: #f1f5f9; border-radius: 8px;
+      width: 30px; height: 30px; cursor: pointer; font-size: 14px; color: #475569; }
+    .modal-body { padding: 14px 22px 22px; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; margin: 12px 0; }
+    .field .k { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
+    .field .v { font-size: 13.5px; margin-top: 3px; }
+    .field.wide { grid-column: 1 / -1; }
+    .docbox { background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-top: 14px; }
+    .docbox h4 { margin: 0 0 10px; font-size: 12.5px; font-weight: 650; color: #334155; }
+    .modal .btn { margin-top: 14px; }
+    .subtable { margin-top: 14px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+
+    /* ---------- Chat ---------- */
+    #view-chat { padding: 0; }
+    .chat-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; width: 100%;
+      max-width: 860px; margin: 0 auto; padding: 0 20px; }
+    #chat { flex: 1; overflow-y: auto; padding: 24px 4px; display: flex; flex-direction: column; gap: 16px; }
+    .row { display: flex; gap: 10px; align-items: flex-end; max-width: 86%; }
+    .row.user { align-self: flex-end; flex-direction: row-reverse; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 30px;
+      display: grid; place-items: center; font-size: 15px; }
+    .avatar.bot { background: var(--brand-soft); }
+    .avatar.user { background: #dbeafe; }
+    .bubble { padding: 12px 15px; border-radius: 16px; white-space: pre-wrap;
+      line-height: 1.5; font-size: 14px; box-shadow: 0 1px 2px rgba(15,23,42,.06); }
+    .row.bot .bubble { background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+    .row.user .bubble { background: var(--brand); color: #fff; border-bottom-right-radius: 5px; }
+    .trace { margin-top: 9px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--muted); }
+    .trace b { font-weight: 600; color: #475569; }
+    .trace .chip { display: inline-block; background: var(--brand-soft); color: var(--brand);
+      padding: 2px 8px; border-radius: 999px; margin: 4px 5px 0 0; font-family: ui-monospace, monospace; }
+    .dots span { display: inline-block; width: 6px; height: 6px; margin-right: 3px;
+      background: var(--muted); border-radius: 50%; animation: bounce 1.2s infinite; }
+    .dots span:nth-child(2){ animation-delay: .15s; } .dots span:nth-child(3){ animation-delay: .3s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-5px);opacity:1} }
+    .suggest { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 4px 6px; }
+    .suggest button { background: #fff; border: 1px solid var(--line); color: #334155;
+      padding: 7px 12px; border-radius: 999px; font-size: 12.5px; cursor: pointer; transition: .15s; }
+    .suggest button:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+    form { display: flex; gap: 10px; padding: 10px 4px 16px; }
+    .inputwrap { flex: 1; display: flex; align-items: center; background: #fff;
+      border: 1px solid var(--line); border-radius: 14px; padding: 4px 4px 4px 16px;
+      box-shadow: 0 2px 10px rgba(15,23,42,.05); }
+    .inputwrap:focus-within { border-color: var(--brand); }
+    .inputwrap input { flex: 1; border: none; outline: none; font-size: 14px; padding: 10px 0; background: transparent; }
+    button.send { border: none; border-radius: 11px; background: var(--brand); color: #fff;
+      width: 44px; height: 40px; font-size: 17px; cursor: pointer; display: grid; place-items: center; }
+    button.send:disabled { opacity: .45; cursor: default; }
+    .foot { text-align: center; font-size: 11px; color: var(--muted); padding-bottom: 10px; }
+
+    @media (max-width: 1000px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .chart-grid { grid-template-columns: 1fr; }
+      aside { width: 70px; flex-basis: 70px; }
+      aside .logo-row h1, aside .logo-row .sub, aside nav a span.txt, aside .side-foot { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <div class="logo-row">
+      <div class="logo">🛡️</div>
+      <div>
+        <h1>Claims Agent</h1>
+        <div class="sub">Spring AI · llama.cpp</div>
+      </div>
+    </div>
+    <nav id="nav">
+      <a href="#dashboard" data-view="dashboard"><span class="ico">📊</span><span class="txt">Dashboard</span></a>
+      <a href="#claims" data-view="claims"><span class="ico">📂</span><span class="txt">Claims</span></a>
+      <a href="#policies" data-view="policies"><span class="ico">📑</span><span class="txt">Policies</span></a>
+      <a href="#chat" data-view="chat"><span class="ico">🤖</span><span class="txt">Agent Chat</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="counts" id="counts"></div>
+      <div class="statusline"><span class="dot"></span> online · H2 database</div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ================= Dashboard ================= -->
+    <section class="view" id="view-dashboard">
+      <div class="view-head">
+        <div>
+          <h2>Dashboard</h2>
+          <div class="desc">Live overview of the claims database</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn" id="refresh">↻ Refresh data</button>
+      </div>
+      <div class="stat-grid" id="stats"></div>
+      <div class="chart-grid">
+        <div class="card chart">
+          <h3>Claims by status</h3>
+          <div class="donut-wrap" id="donut"></div>
+        </div>
+        <div class="card chart">
+          <h3>Claims filed per month (last 12 months)</h3>
+          <div class="bars" id="monthbars"></div>
+        </div>
+        <div class="card chart">
+          <h3>Policies by coverage type</h3>
+          <div class="hbars" id="covbars"></div>
+        </div>
+      </div>
+      <div class="card tablecard">
+        <table>
+          <thead><tr><th>Reference</th><th>Claimant</th><th>Description</th><th class="num">Amount</th><th>Status</th><th>Filed</th></tr></thead>
+          <tbody id="recent"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= Claims ================= -->
+    <section class="view" id="view-claims">
+      <div class="view-head">
+        <div>
+          <h2>Claims</h2>
+          <div class="desc" id="claims-desc"></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search">🔎<input id="claim-search" placeholder="Search reference, claimant, policy…"/></div>
+        <div class="chips" id="claim-chips"></div>
+      </div>
+      <div class="card tablecard">
+        <table>
+          <thead><tr><th>Reference</th><th>Claimant</th><th>Policy</th><th>Description</th><th class="num">Amount</th><th>Status</th><th>Filed</th></tr></thead>
+          <tbody id="claims-body"></tbody>
+        </table>
+        <div class="empty" id="claims-empty" style="display:none">No claims match the current filter.</div>
+      </div>
+    </section>
+
+    <!-- ================= Policies ================= -->
+    <section class="view" id="view-policies">
+      <div class="view-head">
+        <div>
+          <h2>Policies</h2>
+          <div class="desc" id="policies-desc"></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search">🔎<input id="policy-search" placeholder="Search number, holder, type…"/></div>
+        <div class="chips" id="policy-chips"></div>
+      </div>
+      <div class="card tablecard">
+        <table>
+          <thead><tr><th>Policy</th><th>Holder</th><th>Type</th><th class="num">Coverage</th><th class="num">Premium</th><th class="num">Covered</th><th>Expiry</th><th>Status</th></tr></thead>
+          <tbody id="policies-body"></tbody>
+        </table>
+        <div class="empty" id="policies-empty" style="display:none">No policies match the current filter.</div>
+      </div>
+    </section>
+
+    <!-- ================= Chat ================= -->
+    <section class="view" id="view-chat">
+      <div class="chat-shell">
+        <div id="chat">
+          <div class="row bot">
+            <div class="avatar bot">🤖</div>
+            <div class="bubble">Hi! I'm your claims assistant. I can look up policies, pull claim history, analyze documents, calculate payouts, and notify claimants — all backed by the database. Try one of the suggestions below.</div>
+          </div>
+        </div>
+        <div class="suggest" id="suggest">
+          <button>Look up policy POL123456</button>
+          <button>Show me John Smith's claim history</button>
+          <button>Analyze the documents for claim CLM003</button>
+          <button>Calculate the payout for a 20000 dollar claim on POL789012</button>
+        </div>
+        <form id="form">
+          <div class="inputwrap">
+            <input id="input" placeholder="Ask the claims agent…" autocomplete="off"/>
+          </div>
+          <button class="send" id="send" type="submit" title="Send">➤</button>
+        </form>
+        <div class="foot">The local model can take a few seconds per step while it calls tools.</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= Detail modal ================= -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modal-title"></h3>
+        <button class="x" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ------------------------------------------------------------------ utils
+    const $ = id => document.getElementById(id);
+    const fmtMoney = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    const fmtDate = s => s ? new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    const STATUS_COLORS = {
+      PENDING:       { bg: '#fef3c7', fg: '#b45309', dot: 'var(--amber)' },
+      INVESTIGATING: { bg: '#dbeafe', fg: '#1d4ed8', dot: 'var(--blue)' },
+      APPROVED:      { bg: '#dcfce7', fg: '#15803d', dot: 'var(--green)' },
+      PAID:          { bg: '#ede9fe', fg: '#6d28d9', dot: 'var(--violet)' },
+      REJECTED:      { bg: '#fee2e2', fg: '#b91c1c', dot: 'var(--red)' },
+      Active:        { bg: '#dcfce7', fg: '#15803d', dot: 'var(--green)' },
+      Expired:       { bg: '#f1f5f9', fg: '#64748b', dot: '#94a3b8' }
+    };
+    function pill(status) {
+      const c = STATUS_COLORS[status] || { bg: '#f1f5f9', fg: '#475569' };
+      return `<span class="pill" style="background:${c.bg};color:${c.fg}">${escapeHtml(status)}</span>`;
+    }
+
+    // ------------------------------------------------------------------ state
+    let claims = [], policies = [];
+    let claimStatusFilter = 'ALL', policyStatusFilter = 'ALL';
+
+    async function loadData() {
+      const [c, p] = await Promise.all([
+        fetch('/api/claims').then(r => r.json()),
+        fetch('/api/policies').then(r => r.json())
+      ]);
+      claims = c.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      policies = p;
+      renderAll();
+    }
+
+    function renderAll() {
+      $('counts').innerHTML = `<b>${policies.length}</b> policies<br/><b>${claims.length}</b> claims`;
+      renderStats();
+      renderDonut();
+      renderMonthBars();
+      renderCoverageBars();
+      renderRecent();
+      renderClaimsTable();
+      renderPoliciesTable();
+    }
+
+    // ------------------------------------------------------------------ dashboard
+    function renderStats() {
+      const open = claims.filter(c => c.status === 'PENDING' || c.status === 'INVESTIGATING').length;
+      const total = claims.reduce((s, c) => s + (+c.claimAmount || 0), 0);
+      const paid = claims.filter(c => c.status === 'PAID' || c.status === 'APPROVED')
+                         .reduce((s, c) => s + (+c.claimAmount || 0), 0);
+      const active = policies.filter(p => p.status === 'Active').length;
+      $('stats').innerHTML = [
+        ['Total claims', claims.length, `${open} open`],
+        ['Open claims', open, 'pending + investigating'],
+        ['Total claimed', fmtMoney.format(total), `${fmtMoney.format(paid)} approved/paid`],
+        ['Active policies', active, `of ${policies.length} total`]
+      ].map(([label, value, hint]) =>
+        `<div class="card stat"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></div>`
+      ).join('');
+    }
+
+    function renderDonut() {
+      const order = ['PENDING', 'INVESTIGATING', 'APPROVED', 'PAID', 'REJECTED'];
+      const byStatus = order.map(s => [s, claims.filter(c => c.status === s).length]).filter(([, n]) => n > 0);
+      const total = claims.length || 1;
+      const R = 52, C = 2 * Math.PI * R;
+      let offset = 0;
+      const segs = byStatus.map(([s, n]) => {
+        const len = n / total * C;
+        const seg = `<circle r="${R}" cx="70" cy="70" fill="none" stroke="${cssColor(STATUS_COLORS[s].dot)}"
+          stroke-width="20" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-offset}"
+          transform="rotate(-90 70 70)"/>`;
+        offset += len;
+        return seg;
+      }).join('');
+      $('donut').innerHTML =
+        `<svg width="140" height="140" viewBox="0 0 140 140">${segs}
+           <text x="70" y="66" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">${claims.length}</text>
+           <text x="70" y="84" text-anchor="middle" font-size="10" fill="#64748b">claims</text>
+         </svg>
+         <div class="legend">${byStatus.map(([s, n]) =>
+           `<div class="li"><span class="sw" style="background:${cssColor(STATUS_COLORS[s].dot)}"></span>${s.toLowerCase()} <b>${n}</b></div>`).join('')}
+         </div>`;
+    }
+    function cssColor(v) {
+      return v.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(v.slice(4, -1)).trim() : v;
+    }
+
+    function renderMonthBars() {
+      const now = new Date(); const months = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+                      label: d.toLocaleDateString('en-US', { month: 'short' }), n: 0 });
+      }
+      const idx = Object.fromEntries(months.map((m, i) => [m.key, i]));
+      claims.forEach(c => { const k = (c.createdAt || '').slice(0, 7); if (k in idx) months[idx[k]].n++; });
+      const max = Math.max(1, ...months.map(m => m.n));
+      $('monthbars').innerHTML = months.map(m =>
+        `<div class="bar" title="${m.label}: ${m.n} claims">
+           <div class="fill" style="height:${Math.round(m.n / max * 100)}%"></div>
+           <div class="lbl">${m.label}</div>
+         </div>`).join('');
+    }
+
+    function renderCoverageBars() {
+      const counts = {};
+      policies.forEach(p => counts[p.coverageType] = (counts[p.coverageType] || 0) + 1);
+      const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      const max = Math.max(1, ...rows.map(r => r[1]));
+      $('covbars').innerHTML = rows.map(([type, n]) =>
+        `<div class="hbar">
+           <div class="top"><span>${escapeHtml(type)}</span><b>${n}</b></div>
+           <div class="track"><div class="fill" style="width:${Math.round(n / max * 100)}%"></div></div>
+         </div>`).join('');
+    }
+
+    function renderRecent() {
+      $('recent').innerHTML = claims.slice(0, 8).map(c =>
+        `<tr onclick="openClaim(${c.id})">
+           <td class="mono">${escapeHtml(c.reference || '—')}</td>
+           <td>${escapeHtml(c.claimantName)}</td>
+           <td class="trunc">${escapeHtml(c.claimDescription)}</td>
+           <td class="num">${fmtMoney.format(c.claimAmount)}</td>
+           <td>${pill(c.status)}</td>
+           <td>${fmtDate(c.createdAt)}</td>
+         </tr>`).join('');
+    }
+
+    // ------------------------------------------------------------------ claims view
+    const CLAIM_STATUSES = ['ALL', 'PENDING', 'INVESTIGATING', 'APPROVED', 'PAID', 'REJECTED'];
+    function renderClaimChips() {
+      $('claim-chips').innerHTML = CLAIM_STATUSES.map(s =>
+        `<button class="${claimStatusFilter === s ? 'on' : ''}" data-s="${s}">${s === 'ALL' ? 'All' : s.toLowerCase()}</button>`).join('');
+    }
+    function filteredClaims() {
+      const q = $('claim-search').value.trim().toLowerCase();
+      return claims.filter(c =>
+        (claimStatusFilter === 'ALL' || c.status === claimStatusFilter) &&
+        (!q || [c.reference, c.claimantName, c.policyNumber, c.claimDescription]
+          .some(f => (f || '').toLowerCase().includes(q))));
+    }
+    function renderClaimsTable() {
+      renderClaimChips();
+      const rows = filteredClaims();
+      $('claims-desc').textContent = `${rows.length} of ${claims.length} claims`;
+      $('claims-empty').style.display = rows.length ? 'none' : 'block';
+      $('claims-body').innerHTML = rows.map(c =>
+        `<tr onclick="openClaim(${c.id})">
+           <td class="mono">${escapeHtml(c.reference || '—')}</td>
+           <td>${escapeHtml(c.claimantName)}</td>
+           <td class="mono">${escapeHtml(c.policyNumber)}</td>
+           <td class="trunc">${escapeHtml(c.claimDescription)}</td>
+           <td class="num">${fmtMoney.format(c.claimAmount)}</td>
+           <td>${pill(c.status)}</td>
+           <td>${fmtDate(c.createdAt)}</td>
+         </tr>`).join('');
+    }
+
+    // ------------------------------------------------------------------ policies view
+    const POLICY_STATUSES = ['ALL', 'Active', 'Expired'];
+    function renderPolicyChips() {
+      $('policy-chips').innerHTML = POLICY_STATUSES.map(s =>
+        `<button class="${policyStatusFilter === s ? 'on' : ''}" data-s="${s}">${s === 'ALL' ? 'All' : s}</button>`).join('');
+    }
+    function filteredPolicies() {
+      const q = $('policy-search').value.trim().toLowerCase();
+      return policies.filter(p =>
+        (policyStatusFilter === 'ALL' || p.status === policyStatusFilter) &&
+        (!q || [p.policyNumber, p.policyHolder, p.coverageType]
+          .some(f => (f || '').toLowerCase().includes(q))));
+    }
+    function renderPoliciesTable() {
+      renderPolicyChips();
+      const rows = filteredPolicies();
+      $('policies-desc').textContent = `${rows.length} of ${policies.length} policies`;
+      $('policies-empty').style.display = rows.length ? 'none' : 'block';
+      $('policies-body').innerHTML = rows.map(p =>
+        `<tr onclick="openPolicy('${escapeHtml(p.policyNumber)}')">
+           <td class="mono">${escapeHtml(p.policyNumber)}</td>
+           <td>${escapeHtml(p.policyHolder)}</td>
+           <td>${escapeHtml(p.coverageType)}</td>
+           <td class="num">${fmtMoney.format(p.coverageAmount)}</td>
+           <td class="num">${fmtMoney.format(p.premium)}</td>
+           <td class="num">${Math.round(p.coveragePercentage * 100)}%</td>
+           <td>${fmtDate(p.expiryDate)}</td>
+           <td>${pill(p.status)}</td>
+         </tr>`).join('');
+    }
+
+    // ------------------------------------------------------------------ detail modals
+    function field(k, v, wide) {
+      return `<div class="field${wide ? ' wide' : ''}"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+    }
+    function showModal(title, bodyHtml) {
+      $('modal-title').innerHTML = title;
+      $('modal-body').innerHTML = bodyHtml;
+      $('overlay').classList.add('open');
+    }
+
+    async function openClaim(id) {
+      const c = claims.find(x => x.id === id);
+      if (!c) return;
+      showModal(`Claim ${escapeHtml(c.reference || '#' + c.id)} ${pill(c.status)}`,
+        `<div class="field-grid">
+           ${field('Claimant', escapeHtml(c.claimantName))}
+           ${field('Policy', `<a href="javascript:openPolicy('${escapeHtml(c.policyNumber)}')" style="color:var(--brand)">${escapeHtml(c.policyNumber)}</a>`)}
+           ${field('Amount', fmtMoney.format(c.claimAmount))}
+           ${field('Filed', fmtDate(c.createdAt))}
+           ${field('Workflow state', escapeHtml(c.state || '—'))}
+           ${field('Assigned to', escapeHtml(c.assignedTo || '—'))}
+           ${field('Description', escapeHtml(c.claimDescription), true)}
+           ${c.notes ? field('Notes', escapeHtml(c.notes), true) : ''}
+         </div>
+         <div class="docbox" id="docbox"><h4>📄 Document analysis</h4><span style="color:var(--muted);font-size:12.5px">Loading…</span></div>`);
+      try {
+        const res = await fetch(`/api/claims/${id}/document`);
+        const box = $('docbox');
+        if (!box) return;
+        if (res.ok) {
+          const d = await res.json();
+          box.innerHTML = `<h4>📄 Document analysis</h4>
+            <div class="field-grid">
+              ${field('Summary', escapeHtml(d.summary), true)}
+              ${field('Key findings', escapeHtml(d.keyFindings), true)}
+              ${field('Evidence', escapeHtml(d.evidenceType))}
+              ${field('Relevance', escapeHtml(d.relevanceScore))}
+              ${field('Confidence', escapeHtml(d.confidenceLevel))}
+              ${field('Risk', escapeHtml(d.riskAssessment))}
+            </div>`;
+        } else {
+          box.innerHTML = `<h4>📄 Document analysis</h4><span style="color:var(--muted);font-size:12.5px">No document analysis on file for this claim.</span>`;
+        }
+      } catch (e) { /* modal may already be closed */ }
+    }
+
+    async function openPolicy(policyNumber) {
+      const p = policies.find(x => x.policyNumber === policyNumber);
+      if (!p) return;
+      showModal(`Policy ${escapeHtml(p.policyNumber)} ${pill(p.status)}`,
+        `<div class="field-grid">
+           ${field('Policy holder', escapeHtml(p.policyHolder))}
+           ${field('Coverage type', escapeHtml(p.coverageType))}
+           ${field('Coverage amount', fmtMoney.format(p.coverageAmount))}
+           ${field('Annual premium', fmtMoney.format(p.premium))}
+           ${field('Covered percentage', Math.round(p.coveragePercentage * 100) + '%')}
+           ${field('Term', `${fmtDate(p.effectiveDate)} → ${fmtDate(p.expiryDate)}`)}
+         </div>
+         <div class="subtable" id="policy-claims"><div class="empty">Loading claims…</div></div>`);
+      try {
+        const res = await fetch(`/api/policies/${encodeURIComponent(policyNumber)}/claims`);
+        const list = res.ok ? await res.json() : [];
+        const el = $('policy-claims');
+        if (!el) return;
+        el.innerHTML = list.length
+          ? `<table><thead><tr><th>Reference</th><th>Description</th><th class="num">Amount</th><th>Status</th><th>Filed</th></tr></thead>
+             <tbody>${list.map(c =>
+               `<tr onclick="openClaim(${c.id})">
+                  <td class="mono">${escapeHtml(c.reference || '—')}</td>
+                  <td class="trunc">${escapeHtml(c.claimDescription)}</td>
+                  <td class="num">${fmtMoney.format(c.claimAmount)}</td>
+                  <td>${pill(c.status)}</td>
+                  <td>${fmtDate(c.createdAt)}</td>
+                </tr>`).join('')}</tbody></table>`
+          : `<div class="empty">No claims filed under this policy.</div>`;
+      } catch (e) { /* ignore */ }
+    }
+
+    $('modal-close').addEventListener('click', () => $('overlay').classList.remove('open'));
+    $('overlay').addEventListener('click', e => { if (e.target === $('overlay')) $('overlay').classList.remove('open'); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') $('overlay').classList.remove('open'); });
+
+    // ------------------------------------------------------------------ routing
+    function show(view) {
+      document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+      document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('active', a.dataset.view === view));
+      if (view === 'chat') $('input').focus();
+    }
+    function route() {
+      const view = (location.hash || '#dashboard').slice(1);
+      show(['dashboard', 'claims', 'policies', 'chat'].includes(view) ? view : 'dashboard');
+    }
+    window.addEventListener('hashchange', route);
+
+    // ------------------------------------------------------------------ filters wiring
+    $('claim-search').addEventListener('input', renderClaimsTable);
+    $('policy-search').addEventListener('input', renderPoliciesTable);
+    $('claim-chips').addEventListener('click', e => {
+      if (e.target.dataset.s) { claimStatusFilter = e.target.dataset.s; renderClaimsTable(); }
+    });
+    $('policy-chips').addEventListener('click', e => {
+      if (e.target.dataset.s) { policyStatusFilter = e.target.dataset.s; renderPoliciesTable(); }
+    });
+    $('refresh').addEventListener('click', () => loadData());
+
+    // ------------------------------------------------------------------ chat
+    const chat = $('chat'), form = $('form'), input = $('input'), send = $('send');
+    function addRow(who, html) {
+      const row = document.createElement('div');
+      row.className = 'row ' + who;
+      row.innerHTML = `<div class="avatar ${who}">${who === 'user' ? '🧑' : '🤖'}</div>`
+        + `<div class="bubble">${html}</div>`;
+      chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+      return row.querySelector('.bubble');
+    }
+    async function ask(message) {
+      addRow('user', escapeHtml(message));
+      send.disabled = true;
+      const bubble = addRow('bot', '<span class="dots"><span></span><span></span><span></span></span>');
+      try {
+        const res = await fetch('/api/agent/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        let html = escapeHtml(data.reply || '(no reply)');
+        if (data.toolTrace && data.toolTrace.length) {
+          html += '<div class="trace"><b>Tools called:</b><br/>'
+            + data.toolTrace.map(t => `<span class="chip">${escapeHtml(t)}</span>`).join('')
+            + '</div>';
+        }
+        bubble.innerHTML = html;
+      } catch (err) {
+        bubble.innerHTML = '⚠️ Error: ' + escapeHtml(err.message);
+      } finally {
+        send.disabled = false;
+        chat.scrollTop = chat.scrollHeight;
+        input.focus();
+      }
+    }
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = '';
+      ask(msg);
+    });
+    $('suggest').addEventListener('click', e => {
+      if (e.target.tagName === 'BUTTON') ask(e.target.textContent);
+    });
+
+    // ------------------------------------------------------------------ boot
+    route();
+    loadData().catch(err => {
+      $('stats').innerHTML = `<div class="card stat" style="grid-column:1/-1"><div class="label">Failed to load data</div><div class="hint">${escapeHtml(err.message)}</div></div>`;
+    });
+  </script>
+</body>
+</html>
