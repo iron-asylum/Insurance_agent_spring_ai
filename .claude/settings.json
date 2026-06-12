@@ -12,7 +12,14 @@
       "Bash(curl -s -X POST http://localhost:8081/api/agent/chat -H \"Content-Type: application/json\" -d '{\"message\":\"Look up policy POL123456\"}' --max-time 120)",
       "Bash(gh auth *)",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(ssh -T git@github.com -o BatchMode=yes -o ConnectTimeout=5)",
+      "Bash(git -c user.name=\"iron-asylum\" commit -m \"Insurance claims agent: Spring AI + local llama.cpp, H2-backed tools, SPA dashboard UI\")",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(ssh-keyscan -t ed25519,ecdsa,rsa github.com)",
+      "Bash(ssh -T git@github.com -o BatchMode=yes -o ConnectTimeout=8)",
+      "Bash(python3 mcp_probe.py)"
     ]
   }
 }
